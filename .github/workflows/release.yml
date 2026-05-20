@@ -1,0 +1,126 @@
+name: Release
+
+on:
+  release:
+    types: [published, prereleased]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  PLUGIN_NAME: https_samp
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    # Needs write access to attach .so/.dll/.inc to the GitHub release
+    # and to amend the release body with the auto-generated notes.
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Verify Cargo.toml version matches release tag
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          CARGO_VERSION="$(grep -m1 '^version' Cargo.toml | sed 's/.*= *"\(.*\)"/\1/')"
+          echo "Release tag:  ${GITHUB_REF_NAME} (version=${TAG_VERSION})"
+          echo "Cargo.toml:   ${CARGO_VERSION}"
+          if [ "${TAG_VERSION}" != "${CARGO_VERSION}" ]; then
+            echo "::error::Release tag (${GITHUB_REF_NAME}) does not match Cargo.toml version (${CARGO_VERSION})."
+            echo "::error::Bump Cargo.toml to ${TAG_VERSION} (or retag) and try again."
+            exit 1
+          fi
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: i686-unknown-linux-gnu,i686-pc-windows-msvc
+
+      - name: Install cross-compilation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib g++-multilib clang llvm
+
+      - name: Install cargo-xwin
+        run: cargo install cargo-xwin --locked
+
+      - name: Cache cargo
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cache/cargo-xwin
+            target
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build Linux (i686, SA-MP + native OMP)
+        run: cargo build --release --target i686-unknown-linux-gnu
+
+      - name: Build Windows (i686 MSVC, SA-MP + native OMP)
+        run: cargo xwin build --xwin-arch x86 --release --target i686-pc-windows-msvc
+
+      - name: Stage release artifacts
+        run: |
+          mkdir -p dist
+          cp "target/i686-unknown-linux-gnu/release/lib${PLUGIN_NAME}.so" "dist/${PLUGIN_NAME}.so"
+          cp "target/i686-pc-windows-msvc/release/${PLUGIN_NAME}.dll"     "dist/${PLUGIN_NAME}.dll"
+          cp "include/${PLUGIN_NAME}.inc"                                 "dist/${PLUGIN_NAME}.inc"
+
+      - name: Generate release notes
+        run: |
+          SDK_VERSION="$(grep -oP 'tag\s*=\s*"\Kv[0-9][^"]*' Cargo.toml | head -n1)"
+          PLUGIN_VERSION="$(grep -m1 '^version' Cargo.toml | sed 's/.*= *"\(.*\)"/\1/')"
+
+          # Extract the section for the current version from CHANGELOG.md.
+          # Format: "## [X.Y.Z] — yyyy/mm/dd" up to the next "## " heading.
+          CHANGELOG_SECTION=""
+          if [ -f CHANGELOG.md ]; then
+            CHANGELOG_SECTION="$(awk -v ver="${PLUGIN_VERSION}" '
+              $0 ~ "^## \\[" ver "\\]" { capture = 1; next }
+              capture && /^## / { exit }
+              capture { print }
+            ' CHANGELOG.md)"
+          fi
+
+          cat > release_body.md <<EOF
+          ## ${PLUGIN_NAME} v${PLUGIN_VERSION}
+
+          Built on top of [rust-samp ${SDK_VERSION}](https://github.com/NullSablex/rust-samp/releases/tag/${SDK_VERSION}).
+
+          ### Artifacts
+          - \`${PLUGIN_NAME}.so\` — Linux i686 (\`i686-unknown-linux-gnu\`).
+          - \`${PLUGIN_NAME}.dll\` — Windows i686 (\`i686-pc-windows-msvc\`).
+          - \`${PLUGIN_NAME}.inc\` — Pawn include, identical file for SA-MP and Open Multiplayer.
+
+          ### Compatibility
+          The binaries are **universal**: they run on SA-MP and on Open Multiplayer, on Linux and Windows alike.
+
+          - **SA-MP**: register under \`plugins=\` in \`server.cfg\`.
+          - **Open Multiplayer (native mode, recommended)**: register as a component under \`components\` in \`config.json\`. Loaded via \`ComponentEntryPoint\`, with access to \`ICore\`, \`ITimersComponent\` and the remaining native APIs.
+          - **Open Multiplayer (legacy mode)**: still supported — register under \`legacy_plugins\` (or the equivalent key in your \`config.json\`) if you prefer the SA-MP compat path over the native component. Same binary, no extra build flags.
+          EOF
+
+          if [ -n "${CHANGELOG_SECTION}" ]; then
+            {
+              echo ""
+              echo "### Changelog"
+              echo ""
+              echo "${CHANGELOG_SECTION}"
+            } >> release_body.md
+          fi
+
+          cat release_body.md
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: release_body.md
+          append_body: true
+          files: |
+            dist/${{ env.PLUGIN_NAME }}.so
+            dist/${{ env.PLUGIN_NAME }}.dll
+            dist/${{ env.PLUGIN_NAME }}.inc

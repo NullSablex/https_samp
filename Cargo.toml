@@ -1,0 +1,32 @@
+[package]
+name = "https_samp"
+version = "1.0.0"
+edition = "2024"
+authors = ["NullSablex <https://github.com/NullSablex>"]
+repository = "https://github.com/NullSablex/https_samp"
+license = "AGPL-3.0-or-later"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+samp = { git = "https://github.com/NullSablex/rust-samp.git", tag = "v3.0.0", features = ["encoding"] }
+serde_json = "1.0"
+reqwest = { version = "0.13", default-features = false, features = [
+  "blocking", "rustls", "http2",
+  "gzip", "brotli", "deflate", "zstd",
+  "multipart", "cookies",
+] }
+base64 = "0.22"
+url = "2.5"
+crossbeam-channel = "0.5.15"
+num_cpus = "1.17"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = "symbols"
+codegen-units = 1
+
+[package.metadata.samp]
+uid = "0xa5c24c94c21619c9"
