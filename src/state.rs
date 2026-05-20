@@ -98,7 +98,14 @@ pub fn enqueue_response(
         if q.len() >= MAX_QUEUE {
             q.pop_front();
         }
-        q.push_back(HttpsResponse { index, callback, response, status, error, headers });
+        q.push_back(HttpsResponse {
+            index,
+            callback,
+            response,
+            status,
+            error,
+            headers,
+        });
     }
 }
 
@@ -155,7 +162,11 @@ pub fn set_timeout_once(total_ms: u64) {
 
 pub fn take_timeout_once() -> Option<Duration> {
     let ms = PENDING_TIMEOUT_MS.swap(0, Ordering::AcqRel);
-    if ms == 0 { None } else { Some(Duration::from_millis(ms)) }
+    if ms == 0 {
+        None
+    } else {
+        Some(Duration::from_millis(ms))
+    }
 }
 
 // ============================================================================
@@ -330,7 +341,10 @@ static COOKIE_JAR: LazyLock<Mutex<Arc<Jar>>> =
     LazyLock::new(|| Mutex::new(Arc::new(Jar::default())));
 
 fn cookie_jar() -> Arc<Jar> {
-    COOKIE_JAR.lock().map(|j| j.clone()).unwrap_or_else(|_| Arc::new(Jar::default()))
+    COOKIE_JAR
+        .lock()
+        .map(|j| j.clone())
+        .unwrap_or_else(|_| Arc::new(Jar::default()))
 }
 
 pub fn set_cookies_enabled(enabled: bool) {
@@ -386,9 +400,10 @@ fn rebuild_active_client() {
 }
 
 pub fn active_client() -> Arc<Client> {
-    ACTIVE_CLIENT.lock().map(|c| c.clone()).unwrap_or_else(|_| {
-        Arc::new(build_client(None, false).expect("fallback default client"))
-    })
+    ACTIVE_CLIENT
+        .lock()
+        .map(|c| c.clone())
+        .unwrap_or_else(|_| Arc::new(build_client(None, false).expect("fallback default client")))
 }
 
 pub fn set_mtls_identity_pem(pem: &[u8]) -> bool {

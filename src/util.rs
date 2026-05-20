@@ -24,7 +24,10 @@ pub fn print_banner() {
     samp::log::info!("");
     samp::log::info!("  | {} {} | {}", name, version, build_year);
     samp::log::info!("  |-------------------------------");
-    samp::log::info!("  | Author and maintainer: {}", value_or(authors, "Unknown"));
+    samp::log::info!(
+        "  | Author and maintainer: {}",
+        value_or(authors, "Unknown")
+    );
     samp::log::info!("");
     samp::log::info!("  | Compiled: {} at {}", build_date, build_time);
     samp::log::info!("  |-------------------------------");
@@ -65,10 +68,14 @@ fn dispatch_one(amx_list: &[AmxIdent], item: HttpsResponse) {
     let mut delivered = false;
     for ident in amx_list {
         let Some(amx) = get_amx(*ident) else { continue };
-        let Ok(func) = amx.find_public(&item.callback) else { continue };
+        let Ok(func) = amx.find_public(&item.callback) else {
+            continue;
+        };
 
         let allocator = amx.allocator();
-        let Ok(amx_str) = allocator.allot_string(&item.response) else { continue };
+        let Ok(amx_str) = allocator.allot_string(&item.response) else {
+            continue;
+        };
 
         if amx.push(item.error).is_err()
             || amx.push(item.status).is_err()

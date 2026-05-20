@@ -68,13 +68,7 @@ static JOB_TX: LazyLock<Sender<Job>> = LazyLock::new(|| {
 });
 
 /// Submits a request. Falls back to a one-off thread if the worker pool is saturated.
-pub fn start_request(
-    index: i32,
-    method: String,
-    url: String,
-    body: BodyPayload,
-    callback: String,
-) {
+pub fn start_request(index: i32, method: String, url: String, body: BodyPayload, callback: String) {
     let headers: Vec<(String, String)> = state::snapshot_headers().into_iter().collect();
     let job = Job {
         index,
@@ -222,7 +216,13 @@ fn run_job(job: Job) {
 
         if method == "HEAD" {
             let resp_headers = extract_response_headers(&resp);
-            finish_ok(index, &callback, String::new(), status.as_u16() as i32, resp_headers);
+            finish_ok(
+                index,
+                &callback,
+                String::new(),
+                status.as_u16() as i32,
+                resp_headers,
+            );
             return;
         }
 

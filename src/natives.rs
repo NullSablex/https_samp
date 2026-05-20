@@ -206,7 +206,10 @@ impl Plugin {
         key: &AmxString,
         value: &AmxString,
     ) -> AmxResult<bool> {
-        Ok(state::add_multipart_text(key.to_string(), value.to_string()))
+        Ok(state::add_multipart_text(
+            key.to_string(),
+            value.to_string(),
+        ))
     }
 
     /// Appends a file field to the multipart/form-data builder. The file is

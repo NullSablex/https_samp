@@ -18,7 +18,9 @@ pub struct Plugin {
 
 impl Plugin {
     fn new() -> Self {
-        Self { amx_list: Vec::new() }
+        Self {
+            amx_list: Vec::new(),
+        }
     }
 }
 
