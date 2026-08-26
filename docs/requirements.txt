@@ -9,5 +9,5 @@
 # `mkdocs serve` locally.
 
 mkdocs>=1.6
-mkdocs-material>=9.5
+mkdocs-material>=9.7.7
 pymdown-extensions>=11.0.2
