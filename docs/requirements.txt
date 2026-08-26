@@ -8,6 +8,6 @@
 # `actions/setup-python` `cache: pip` key) and by anyone running
 # `mkdocs serve` locally.
 
-mkdocs>=1.6
+mkdocs>=1.6.1
 mkdocs-material>=9.7.7
 pymdown-extensions>=11.0.2
