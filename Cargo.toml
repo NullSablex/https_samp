@@ -17,7 +17,7 @@ reqwest = { version = "0.12", default-features = false, features = [
   "gzip", "brotli", "deflate", "zstd",
   "multipart", "cookies",
 ] }
-base64 = "0.22"
+base64 = "0.23"
 url = "2.5"
 crossbeam-channel = "0.5.15"
 num_cpus = "1.17"
