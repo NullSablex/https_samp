@@ -35,8 +35,9 @@ jobs:
           fi
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@02cb101ec7c40f2c49e1d9714d64511d8e1b74de # v1
         with:
+          toolchain: stable
           targets: i686-unknown-linux-gnu,i686-pc-windows-msvc
 
       - name: Install cross-compilation tools
@@ -116,7 +117,7 @@ jobs:
           cat release_body.md
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           body_path: release_body.md
           append_body: true
