@@ -1,10 +1,9 @@
 name: Rust
 
+# Reusable: called by ci.yml when Rust sources, includes or Cargo inputs change.
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  workflow_call:
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -58,22 +57,6 @@ jobs:
           toolchain: stable
           components: rustfmt
       - run: cargo fmt --all -- --check
-
-  audit:
-    name: Security audit
-    runs-on: ubuntu-latest
-    # rustsec/audit-check opens issues for new advisories and posts
-    # review comments on PRs that introduce vulnerable dependencies.
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
-      checks: write
-    steps:
-      - uses: actions/checkout@v7
-      - uses: rustsec/audit-check@69366f33c96575abad1ee0dba8212993eecbe998 # v2.0.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
   coverage:
     name: Coverage (llvm-cov)

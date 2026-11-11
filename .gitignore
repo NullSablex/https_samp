@@ -1,2 +1,5 @@
 /target
 /dist
+# Zensical output and cache
+/site/
+/.cache/
